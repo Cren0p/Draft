@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>천옵대 전야제 팀짜기</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #080b12;
+  --surf:   #0f1420;
+  --card:   #151b2c;
+  --card2:  #1b2236;
+  --border: #252f46;
+  --text:   #d8e2f8;
+  --muted:  #5a6888;
+  --a:      #3d9bff;
+  --a-dim:  rgba(61,155,255,0.13);
+  --a-glow: rgba(61,155,255,0.35);
+  --b:      #ff5435;
+  --b-dim:  rgba(255,84,53,0.13);
+  --b-glow: rgba(255,84,53,0.35);
+  --tank:   #22d3c8;
+  --dps:    #f06060;
+  --sup:    #5bdb8a;
+  --gold:   #f5c842;
+  --silver: #6e7a99;
+  --lw:     64px;
+  --ff:     'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --team-head-h: 54px; /* header height of team panels — used to offset pool tops */
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);color:var(--text);font-family:var(--ff);}
+body{display:flex;flex-direction:column;padding:14px 14px 40px;gap:12px;
+  background-image:radial-gradient(ellipse 70% 40% at 50% 0%,rgba(61,155,255,0.06) 0%,transparent 60%);}
+
+/* ── HEADER ── */
+header{display:flex;align-items:center;justify-content:space-between;position:relative;height:144px;}
+.logo-wrap{
+  position:absolute;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:18px;
+}
+.logo-img{
+  height:132px;object-fit:contain;
+}
+.logo-text{
+  font-family:'Orbitron',sans-serif;font-size:2.2rem;font-weight:500;
+  color:#fff;letter-spacing:0.12em;
+  text-shadow:0 0 22px rgba(61,155,255,0.5);white-space:nowrap;
+}
+.hbtn{background:var(--card);border:1px solid var(--border);padding:8px 18px;
+  color:var(--text);font-family:var(--ff);font-weight:700;font-size:1rem;
+  cursor:pointer;transition:border-color .15s,color .15s;margin-left:auto;}
+.hbtn.reset:hover{border-color:#e05555;color:#e05555;}
+
+/* ── 3-COLUMN MAIN ── */
+.main{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:10px;
+  align-items:start;
+}
+
+/* ── PANEL BASE ── */
+.panel{background:var(--surf);border:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;}
+
+/* ── POOL: no header, top padding offsets to match team header ── */
+.pool-panel{border:none;background:transparent;}
+.pool-offset{height:var(--team-head-h);}  /* invisible spacer = team header height */
+.pool-inner{background:var(--surf);border:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;}
+.pool-body{padding:7px 8px;display:grid;
+  grid-template-columns:var(--lw) repeat(4,1fr);
+  grid-auto-rows:auto;align-content:start;gap:4px;}
+
+/* group label */
+.glabel{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:1px solid var(--border);background:var(--card2);padding:4px 2px;gap:2px;}
+.glabel-icon{width:26px;height:26px;object-fit:contain;opacity:.85;}
+.glabel .gl-role{font-size:0.9rem;font-weight:700;}
+.glabel .gl-sub{font-size:0.75rem;font-weight:600;}
+.glabel.tank{border-color:rgba(34,211,200,0.25);} .glabel.tank .gl-role{color:var(--tank);}
+.glabel.dps {border-color:rgba(240,96,96,0.25);}  .glabel.dps  .gl-role{color:var(--dps);}
+.glabel.sup {border-color:rgba(91,219,138,0.25);} .glabel.sup  .gl-role{color:var(--sup);}
+.glabel.high .gl-sub{color:var(--gold);} .glabel.low .gl-sub{color:var(--silver);}
+
+/* ── CARD BASE ── */
+.pcard,.slot{display:flex;flex-direction:column;align-items:center;
+  gap:4px;padding:6px 3px 6px;transition:border-color .13s,box-shadow .13s;
+  position:relative;width:100%;}
+.pcard{background:var(--card);border:1px solid var(--border);cursor:pointer;user-select:none;}
+.pcard:hover:not(.is-assigned):not(.selected){border-color:rgba(255,255,255,0.25);
+  box-shadow:0 3px 14px rgba(0,0,0,0.4);}
+.pcard.selected{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,0.3);}
+.pcard.dragging{opacity:.3;}
+.pcard.is-assigned{cursor:default;pointer-events:none;}
+.pcard.dim-a{border-color:rgba(61,155,255,0.4);background:rgba(61,155,255,0.07);}
+.pcard.dim-b{border-color:rgba(255,84,53,0.4); background:rgba(255,84,53,0.07);}
+
+.avatar{width:100%;aspect-ratio:1/1;background:var(--card2);border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;font-weight:900;position:relative;overflow:hidden;flex-shrink:0;}
+.avatar img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+.avatar.tank{border-color:rgba(34,211,200,0.45);color:var(--tank);}
+.avatar.dps {border-color:rgba(240,96,96,0.45); color:var(--dps);}
+.avatar.sup {border-color:rgba(91,219,138,0.45);color:var(--sup);}
+.tier-pip{position:absolute;bottom:3px;right:3px;width:8px;height:8px;
+  border-radius:50%;z-index:2;}
+.tier-pip.high{background:var(--gold);box-shadow:0 0 5px var(--gold);}
+.tier-pip.low {background:var(--silver);}
+
+.pcard-bottom{display:flex;align-items:center;justify-content:center;
+  gap:5px;width:100%;padding:0 2px;}
+.team-tag{font-size:0.75rem;font-weight:900;padding:1px 5px;flex-shrink:0;letter-spacing:0.05em;}
+.team-tag.ta{background:rgba(61,155,255,0.2);color:var(--a);border:1px solid var(--a);}
+.team-tag.tb{background:rgba(255,84,53,0.2); color:var(--b);border:1px solid var(--b);}
+.pname{font-size:0.95rem;font-weight:700;text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:1;min-width:0;}
+
+.pcell-empty{border:1px dashed rgba(255,255,255,0.04);width:100%;aspect-ratio:1/1;}
+
+/* ── TEAMS CENTER ── */
+.teams-half{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:stretch;}
+.tpanel{border-top:3px solid var(--border);display:flex;flex-direction:column;}
+.tpanel.ta{border-top-color:var(--a);}
+.tpanel.tb{border-top-color:var(--b);}
+.team-head{padding:12px 12px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  height:var(--team-head-h);flex-shrink:0;}
+.tname{font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:900;
+  letter-spacing:0.1em;text-align:center;}
+.ta .tname{color:var(--a);text-shadow:0 0 16px var(--a-glow);}
+.tb .tname{color:var(--b);text-shadow:0 0 16px var(--b-glow);}
+
+.tslots{padding:7px;display:grid;grid-template-columns:1fr 1fr;
+  grid-auto-rows:auto;gap:5px;flex:1;align-content:center;}
+
+.slot{border:1px dashed var(--border);background:transparent;cursor:pointer;}
+.slot:hover:not(.filled){border-color:rgba(255,255,255,0.15);}
+.slot.filled{border-style:solid;background:var(--card);animation:sIn .18s ease;}
+.ta .slot.drag-over-ok{border-style:solid;border-color:var(--a)!important;background:var(--a-dim)!important;}
+.tb .slot.drag-over-ok{border-style:solid;border-color:var(--b)!important;background:var(--b-dim)!important;}
+.slot.drag-over-bad{border-style:solid;border-color:rgba(255,60,60,0.5)!important;background:rgba(255,60,60,0.06)!important;}
+.slot.filled.ta-s{border-color:rgba(61,155,255,0.3);}
+.slot.filled.tb-s{border-color:rgba(255,84,53,0.3);}
+/* slot selected (clicked first, waiting for player) */
+.slot.slot-selected{
+  border-style:solid!important;
+  border-color:rgba(255,255,255,0.5)!important;
+  background:rgba(255,255,255,0.04)!important;
+}
+/* pool card highlighted because a slot is selected */
+.pcard.pool-valid{
+  border-color:rgba(255,255,255,0.4)!important;
+  box-shadow:0 0 8px rgba(255,255,255,0.15)!important;
+}
+.slot.slot-valid{border-style:solid!important;animation:slotPulse 0.9s ease-in-out infinite alternate;}
+.ta .slot.slot-valid{border-color:var(--a)!important;background:var(--a-dim)!important;box-shadow:0 0 10px var(--a-glow);}
+.tb .slot.slot-valid{border-color:var(--b)!important;background:var(--b-dim)!important;box-shadow:0 0 10px var(--b-glow);}
+@keyframes slotPulse{from{opacity:.6;}to{opacity:1;}}
+@keyframes sIn{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:none;}}
+
+.srem-x{
+  position:absolute;top:4px;right:4px;
+  width:20px;height:20px;
+  background:rgba(8,11,18,0.75);
+  border:1px solid rgba(220,80,80,0.5);
+  color:rgba(220,80,80,0.7);
+  font-size:0.75rem;font-weight:400;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;opacity:0;z-index:10;
+  transition:opacity .15s,background .15s,color .15s,border-color .15s;
+  line-height:1;letter-spacing:0;
+}
+.slot.filled:hover .srem-x{opacity:1;}
+.srem-x:hover{background:rgba(200,50,50,0.85);color:#fff;border-color:rgba(200,50,50,0.9);}
+
+.slot-cat-av{width:100%;aspect-ratio:1/1;border:1px dashed;
+  display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.slot-cat-av img{width:28%;height:28%;object-fit:contain;opacity:.14;}
+.slot-cat-av.tank{border-color:rgba(34,211,200,0.14);}
+.slot-cat-av.dps {border-color:rgba(240,96,96,0.14);}
+.slot-cat-av.sup {border-color:rgba(91,219,138,0.14);}
+.slot-cat-name{font-size:0.8rem;font-weight:700;text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  width:100%;padding:0 2px;opacity:.28;}
+.slot-cat-name.tank{color:var(--tank);} .slot-cat-name.dps{color:var(--dps);} .slot-cat-name.sup{color:var(--sup);}
+
+/* ── BALANCE ── */
+.balance-bar{min-height:16px;display:flex;align-items:center;justify-content:center;}
+.bmsg{font-size:1rem;color:var(--gold);display:none;}
+.bmsg.on{display:block;}
+
+/* ── SHUFFLE BUTTON ── */
+.shuffle-wrap{
+  display:flex;justify-content:center;padding-top:8px;
+}
+.shuffle-btn{
+  background:var(--card);border:1px solid var(--border);
+  padding:10px 28px;color:var(--muted);
+  font-family:var(--ff);font-weight:700;font-size:1rem;
+  cursor:not-allowed;transition:border-color .15s,color .15s,background .15s;
+  width:100%;
+}
+.shuffle-btn.active{
+  border-color:rgba(255,255,255,0.25);color:var(--text);cursor:pointer;
+}
+.shuffle-btn.active:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ── MAP SECTION ── */
+.map-section{background:var(--surf);border:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;
+  width:fit-content;align-self:center;min-width:320px;}
+
+/* 1. Winner card */
+.map-winner-wrap{
+  padding:16px 24px 12px;border-bottom:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.map-winner-card{
+  width:180px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  background:var(--card);border:1px solid var(--border);padding:6px 5px 8px;
+}
+.map-winner-card.hidden{visibility:hidden;pointer-events:none;}
+.map-winner-img{width:100%;aspect-ratio:16/9;object-fit:cover;border:1px solid var(--border);}
+
+/* roller for winner name */
+.map-winner-roller{
+  height:1.5rem;overflow:hidden;width:100%;display:flex;align-items:center;justify-content:center;
+}
+.map-winner-name{
+  font-size:1rem;font-weight:400;text-align:center;color:var(--text);
+  letter-spacing:0.04em;white-space:nowrap;
+  display:block;
+}
+@keyframes rollDown{
+  0%  {transform:translateY(-100%);opacity:0;}
+  100%{transform:translateY(0);    opacity:1;}
+}
+.roll-anim{animation:rollDown 0.09s ease-out;}
+
+.map-winner-mode{display:flex;align-items:center;gap:6px;
+  font-family:var(--ff);font-size:0.85rem;font-weight:600;}
+.map-winner-mode img{width:18px;height:18px;object-fit:contain;}
+.map-winner-mode.control{color:var(--a);}
+.map-winner-mode.escort {color:var(--sup);}
+.map-winner-mode.hybrid {color:var(--gold);}
+.map-winner-mode.empty  {color:transparent;}   /* hidden when no pick yet */
+
+/* 2. Buttons */
+.map-btn-row{
+  padding:12px 24px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+  border-bottom:1px solid var(--border);
+}
+.map-pick-btn{
+  background:var(--card);border:1px solid var(--border);
+  padding:10px 20px;color:var(--text);
+  font-family:var(--ff);font-weight:600;font-size:1rem;
+  cursor:pointer;transition:border-color .15s,color .15s;
+}
+.map-pick-btn:hover{border-color:rgba(255,255,255,0.3);}
+.map-pick-btn.ctrl{border-color:rgba(61,155,255,0.3);color:var(--a);}
+.map-pick-btn.ctrl:hover{border-color:var(--a);}
+.map-pick-btn.esc {border-color:rgba(91,219,138,0.3);color:var(--sup);}
+.map-pick-btn.esc:hover{border-color:var(--sup);}
+.map-pick-btn.hyb {border-color:rgba(245,200,66,0.3);color:var(--gold);}
+.map-pick-btn.hyb:hover{border-color:var(--gold);}
+.map-pick-btn:disabled{opacity:.4;cursor:default;}
+
+/* 3. Map groups */
+.map-groups{padding:14px 24px;display:flex;gap:24px;flex-wrap:wrap;justify-content:center;}
+.map-group-label{display:flex;align-items:center;gap:7px;
+  font-size:0.95rem;font-weight:900;letter-spacing:0.1em;
+  margin-bottom:8px;text-transform:uppercase;}
+.map-group-label img{width:20px;height:20px;object-fit:contain;}
+.map-group-label.control{color:var(--a);}
+.map-group-label.escort {color:var(--sup);}
+.map-group-label.hybrid {color:var(--gold);}
+.map-btns{display:flex;flex-wrap:wrap;gap:5px;}
+
+/* map card: click to exclude → grayscale */
+.map-btn{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  width:90px;background:var(--card);border:1px solid var(--border);
+  padding:5px 4px 6px;cursor:pointer;
+  transition:border-color .15s;position:relative;
+}
+.map-btn:hover{border-color:rgba(255,255,255,0.25);}
+.map-btn-img{width:100%;aspect-ratio:16/9;object-fit:cover;border:1px solid var(--border);
+  transition:filter .25s,opacity .25s;}
+.map-btn-name{font-size:0.82rem;font-weight:700;text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;color:var(--text);
+  transition:color .25s;}
+/* excluded state */
+.map-btn.excluded .map-btn-img{filter:grayscale(1) brightness(0.35);}
+.map-btn.excluded .map-btn-name{color:var(--muted);}
+.map-btn.excluded{border-color:rgba(255,255,255,0.06);}
+/* excluded badge */
+.map-btn.excluded::after{
+  content:'✕';position:absolute;top:2px;right:4px;
+  font-size:0.7rem;font-weight:900;color:rgba(255,80,80,0.8);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-wrap">
+    <img class="logo-img" src="https://raw.githubusercontent.com/Cren0p/Draft/main/COD.webp"
+         alt="" onerror="this.style.display='none'">
+  </div>
+  <button class="hbtn reset" onclick="resetAll()">↩ 초기화</button>
+</header>
+
+<div class="main">
+
+  <!-- LEFT: 고티어 풀 (no header, padded to align with team content) -->
+  <div class="pool-panel">
+    <div class="pool-offset"></div>
+    <div class="pool-inner">
+      <div class="pool-body" id="poolHigh"
+           ondragover="onPoolOver(event)" ondrop="onPoolDrop(event)"></div>
+    </div>
+  </div>
+
+  <!-- CENTER: 팀 -->
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <div class="teams-half">
+      <div class="panel tpanel ta">
+        <div class="team-head"><div class="tname">1팀</div></div>
+        <div class="tslots" id="slotsA"></div>
+      </div>
+      <div class="panel tpanel tb">
+        <div class="team-head"><div class="tname">2팀</div></div>
+        <div class="tslots" id="slotsB"></div>
+      </div>
+    </div>
+    <div class="shuffle-wrap">
+      <button class="shuffle-btn" id="shuffleBtn" onclick="shuffleTeams()" disabled>
+        ⇄ 무작위 섞기 (멤버 12명 확정 후 활성화)
+      </button>
+    </div>
+  </div>
+
+  <!-- RIGHT: 저티어 풀 -->
+  <div class="pool-panel">
+    <div class="pool-offset"></div>
+    <div class="pool-inner">
+      <div class="pool-body" id="poolLow"
+           ondragover="onPoolOver(event)" ondrop="onPoolDrop(event)"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="balance-bar"><div class="bmsg" id="balanceMsg"></div></div>
+
+<!-- MAP SECTION -->
+<div class="map-section">
+
+  <!-- 1. Winner -->
+  <div class="map-winner-wrap">
+    <div class="map-winner-card hidden" id="winnerCard">
+      <img class="map-winner-img" id="winnerImg" src="" alt="">
+      <div class="map-winner-roller">
+        <span class="map-winner-name" id="winnerName">—</span>
+      </div>
+    </div>
+    <div class="map-winner-mode empty" id="winnerMode">&nbsp;</div>
+  </div>
+
+  <!-- 2. Buttons -->
+  <div class="map-btn-row">
+    <button class="map-pick-btn"      id="btnAll"  onclick="pickRandomMap(null)">전체 무작위</button>
+    <button class="map-pick-btn ctrl" id="btnCtrl" onclick="pickRandomMap('control')">쟁탈 무작위</button>
+    <button class="map-pick-btn esc"  id="btnEsc"  onclick="pickRandomMap('escort')">호위 무작위</button>
+    <button class="map-pick-btn hyb"  id="btnHyb"  onclick="pickRandomMap('hybrid')">혼합 무작위</button>
+  </div>
+
+  <!-- 3. Map list -->
+  <div class="map-groups" id="mapGroups"></div>
+
+</div>
+
+<script>
+const BASE = 'https://raw.githubusercontent.com/Cren0p/Draft/main/';
+const enc  = s => encodeURIComponent(s);
+
+const ROLE_IMG = {tank:'Tank.webp', dps:'Damage.webp', sup:'Support.webp'};
+const MAP_IMG  = {
+  '네팔':'Nepal.webp','리장 타워':'Lijiang.webp','부산':'Busan.webp',
+  '오아시스':'Oasis.webp','일리오스':'Ilios.webp',
+  '66번 국도':'Route 66.webp','감시 기지: 지브롤터':'Gibraltar.webp',
+  '도라도':'Dorado.webp','리알토':'Rialto.webp','쓰레기촌':'Junkertown.webp',
+  '눔바니':'Numbani.webp','블리자드 월드':'Blizzard World.webp',
+  '아이헨발데':'Eichenwalde.webp','왕의 길':"King's Row.webp",'할리우드':'Hollywood.webp',
+};
+const MODE_IMG = {control:'Control.webp', escort:'Escort.webp', hybrid:'Hybrid.webp'};
+
+const INIT = [
+  {id:1,  name:'온네',   role:'tank',tier:'high',img:'ONNAE.webp'},
+  {id:2,  name:'딴딴',   role:'tank',tier:'high',img:'DD2D.webp'},
+  {id:3,  name:'조디악', role:'tank',tier:'high',img:'ZODIAC.webp'},
+  {id:4,  name:'클로이', role:'tank',tier:'high',img:'CHLOE.webp'},
+  {id:5,  name:'머독',   role:'tank',tier:'low', img:'MD.webp'},
+  {id:6,  name:'강만식', role:'tank',tier:'low', img:'MAN.webp'},
+  {id:7,  name:'타요',   role:'tank',tier:'low', img:'TAYO.webp'},
+  {id:8,  name:'양도끼', role:'tank',tier:'low', img:'YDK.webp'},
+  {id:9,  name:'체비',   role:'dps', tier:'high',img:'CB.webp'},
+  {id:10, name:'김진솔', role:'dps', tier:'high',img:'JINSOL.webp'},
+  {id:11, name:'뽀린걸', role:'dps', tier:'high',img:'BBO.webp'},
+  {id:12, name:'김군',   role:'dps', tier:'high',img:'GG.webp'},
+  {id:13, name:'오아',   role:'dps', tier:'low', img:'OAH.webp'},
+  {id:14, name:'진성준', role:'dps', tier:'low', img:'JSJ.webp'},
+  {id:15, name:'저라뎃', role:'dps', tier:'low', img:'JLT.webp'},
+  {id:16, name:'망개',   role:'dps', tier:'low', img:'MANG.webp'},
+  {id:17, name:'나나문', role:'sup', tier:'high',img:'NNM.webp'},
+  {id:18, name:'파니',   role:'sup', tier:'high',img:'PANI.webp'},
+  {id:19, name:'모카',   role:'sup', tier:'high',img:'MOCA.webp'},
+  {id:20, name:'한결',   role:'sup', tier:'high',img:'HG.webp'},
+  {id:21, name:'징버거', role:'sup', tier:'low', img:'JING.webp'},
+  {id:22, name:'비챤',   role:'sup', tier:'low', img:'VII.webp'},
+  {id:23, name:'문모모', role:'sup', tier:'low', img:'MMM.webp'},
+  {id:24, name:'견자희', role:'sup', tier:'low', img:'42.webp'},
+];
+
+const ROLE_GROUPS = ['tank','dps','sup'];
+const RL = {tank:'돌격',dps:'공격',sup:'지원'};
+const TIER_LBL = {high:'고티어',low:'저티어'};
+
+const SLOT_CATS = [
+  {role:'tank',tier:'high',label:'돌격 고'},
+  {role:'tank',tier:'low', label:'돌격 저'},
+  {role:'dps', tier:'high',label:'공격 고'},
+  {role:'dps', tier:'low', label:'공격 저'},
+  {role:'sup', tier:'high',label:'지원 고'},
+  {role:'sup', tier:'low', label:'지원 저'},
+];
+
+let players   = INIT.map(p=>({...p}));
+let nextId    = 100;
+let teamA     = new Array(6).fill(null);
+let teamB     = new Array(6).fill(null);
+let dId=null, dFrom=null, dSlot=null;
+let selectedId=null;      // pool player selected
+let selectedSlot=null;    // {t, i} — slot selected first
+
+const getP  = id => players.find(p=>p.id===id);
+const init1 = name => name?name[0]:'?';
+const imgTag= p => p&&p.img
+  ? `<img src="${BASE}${enc(p.img)}" alt="" onerror="this.style.display='none'">`:'';
+
+// ── RENDER ──────────────────────────────────────────────
+function render(){
+  renderPool('high');
+  renderPool('low');
+  renderTeam('A');
+  renderTeam('B');
+  updateBalance();
+}
+
+function renderPool(tier){
+  const assignedIds=new Set([...teamA,...teamB].filter(Boolean).map(p=>p.id));
+  const elId=tier==='high'?'poolHigh':'poolLow';
+  let html='';
+  ROLE_GROUPS.forEach(role=>{
+    const gp=players.filter(p=>p.role===role&&p.tier===tier);
+    html+=`<div class="glabel ${role} ${tier}">
+      <img class="glabel-icon" src="${BASE}${enc(ROLE_IMG[role])}" alt="" onerror="this.style.display='none'">
+      <div class="gl-role">${RL[role]}</div>
+      <div class="gl-sub">${TIER_LBL[tier]}</div>
+    </div>`;
+    for(let i=0;i<4;i++){
+      const p=gp[i];
+      if(p){
+        const inA=teamA.some(x=>x&&x.id===p.id);
+        const inB=teamB.some(x=>x&&x.id===p.id);
+        const assigned=inA||inB;
+        const tag=inA?`<span class="team-tag ta">1팀</span>`:inB?`<span class="team-tag tb">2팀</span>`:'';
+        // highlight if this player matches currently selected slot
+        const slotMatch = selectedSlot && !assigned &&
+          SLOT_CATS[selectedSlot.i].role===p.role &&
+          SLOT_CATS[selectedSlot.i].tier===p.tier;
+        html+=`<div class="pcard ${inA?'dim-a':inB?'dim-b':''} ${assigned?'is-assigned':''} ${selectedId===p.id?'selected':''} ${slotMatch?'pool-valid':''}" id="pc-${p.id}"
+          draggable="${!assigned}"
+          ondragstart="onPCardStart(event,${p.id})"
+          ondragend="onPCardEnd(event,${p.id})"
+          onclick="onPCardClick(event,${p.id})">
+          <div class="avatar ${p.role}">${imgTag(p)}${init1(p.name)}<span class="tier-pip ${p.tier}"></span></div>
+          <div class="pcard-bottom">${tag}<div class="pname">${p.name}</div></div>
+        </div>`;
+      } else {
+        html+=`<div class="pcell-empty"></div>`;
+      }
+    }
+  });
+  document.getElementById(elId).innerHTML=html;
+}
+
+function renderTeam(t){
+  const arr=t==='A'?teamA:teamB;
+  const tc=t==='A'?'ta-s':'tb-s';
+  document.getElementById('slots'+t).innerHTML=SLOT_CATS.map((cat,i)=>{
+    const p=arr[i];
+    const slotSel = selectedSlot && selectedSlot.t===t && selectedSlot.i===i;
+    if(p){
+      return `<div class="slot filled ${tc}" id="slot-${t}-${i}"
+        draggable="true"
+        ondragstart="onSlotStart(event,'${t}',${i})"
+        ondragend="onSlotEnd(event)"
+        ondragover="onSlotOver(event,'${t}',${i})"
+        ondragleave="onSlotLeave(event,'${t}',${i})"
+        ondrop="onSlotDrop(event,'${t}',${i})"
+        onclick="onSlotClick(event,'${t}',${i})">
+        <div class="avatar ${p.role}">${imgTag(p)}${init1(p.name)}<span class="tier-pip ${p.tier}"></span></div>
+        <div class="pcard-bottom"><div class="pname">${p.name}</div></div>
+        <button class="srem-x" onclick="event.stopPropagation();removeSlot('${t}',${i})">✕</button>
+      </div>`;
+    } else {
+      return `<div class="slot ${slotSel?'slot-selected':''}" id="slot-${t}-${i}"
+        ondragover="onSlotOver(event,'${t}',${i})"
+        ondragleave="onSlotLeave(event,'${t}',${i})"
+        ondrop="onSlotDrop(event,'${t}',${i})"
+        onclick="onSlotClick(event,'${t}',${i})">
+        <div class="slot-cat-av ${cat.role} ${cat.tier}">
+          <img src="${BASE}${enc(ROLE_IMG[cat.role])}" alt="" onerror="this.style.display='none'">
+        </div>
+        <div class="slot-cat-name ${cat.role}">${cat.label}</div>
+      </div>`;
+    }
+  }).join('');
+}
+
+// ── CLICK-TO-ASSIGN (bidirectional, bug-fixed) ────────────
+function onPCardClick(e, id){
+  e.stopPropagation();
+  const p = getP(id); if(!p) return;
+  const inTeam = teamA.some(x=>x&&x.id===id) || teamB.some(x=>x&&x.id===id);
+  if(inTeam) return;
+
+  // CASE A: a slot is already selected → try to assign player to it
+  if(selectedSlot !== null){
+    const cat = SLOT_CATS[selectedSlot.i];
+    if(p.role === cat.role && p.tier === cat.tier){
+      doAssign(p, selectedSlot.t, selectedSlot.i);
+      clearSelection(); render(); return;
+    }
+    // wrong category: clear slot selection, fall through to select player
+    clearSelection();
+  }
+
+  // CASE B: toggle player selection
+  if(selectedId === id){ clearSelection(); return; }
+  clearSelection();
+  selectedId = id;
+  document.getElementById('pc-'+id)?.classList.add('selected');
+  highlightValidSlots(p);
+}
+
+function onSlotClick(e, t, i){
+  e.stopPropagation();
+  const cat = SLOT_CATS[i];
+
+  // CASE A: player already selected → assign
+  if(selectedId !== null){
+    const player = getP(selectedId); if(!player){ clearSelection(); return; }
+    if(player.role !== cat.role || player.tier !== cat.tier){ clearSelection(); return; }
+    doAssign(player, t, i);
+    clearSelection(); render(); return;
+  }
+
+  // Only act on empty slots for slot-first flow
+  const arr = t==='A' ? teamA : teamB;
+  if(arr[i] !== null) return; // filled slot with no player selected → ignore
+
+  // CASE B: select this empty slot
+  if(selectedSlot && selectedSlot.t===t && selectedSlot.i===i){
+    clearSelection(); return; // toggle off
+  }
+  clearSelection();
+  selectedSlot = {t, i};
+  highlightMatchingPlayers(cat);
+  // re-render just to show slot-selected style
+  renderTeam('A'); renderTeam('B');
+  renderPool('high'); renderPool('low');
+}
+
+// Core assign: removes player from any existing slot, places in target
+// BUG-FIXED: never use a stale destArr reference after teamA/B reassignment
+function doAssign(player, t, i){
+  // Remove player from wherever they currently are
+  teamA = teamA.map(x => x && x.id===player.id ? null : x);
+  teamB = teamB.map(x => x && x.id===player.id ? null : x);
+  // Now assign — use the variable directly (not a captured reference)
+  if(t==='A') teamA[i] = player;
+  else        teamB[i] = player;
+}
+
+function clearSelection(){
+  if(selectedId !== null) document.getElementById('pc-'+selectedId)?.classList.remove('selected');
+  selectedId = null;
+  selectedSlot = null;
+  clearHighlights();
+  clearPoolValid();
+}
+document.addEventListener('click', ()=>clearSelection());
+
+function highlightValidSlots(player){
+  if(!player) return;
+  ['A','B'].forEach(t=>{
+    SLOT_CATS.forEach((cat,i)=>{
+      if(cat.role===player.role && cat.tier===player.tier)
+        document.getElementById(`slot-${t}-${i}`)?.classList.add('slot-valid');
+    });
+  });
+}
+function clearHighlights(){
+  document.querySelectorAll('.slot-valid,.slot-selected').forEach(el=>
+    el.classList.remove('slot-valid','slot-selected'));
+}
+
+function highlightMatchingPlayers(cat){
+  document.querySelectorAll('.pcard').forEach(el=>{
+    const id = parseInt(el.id.replace('pc-',''));
+    const p = getP(id);
+    if(p && !el.classList.contains('is-assigned') &&
+       p.role===cat.role && p.tier===cat.tier)
+      el.classList.add('pool-valid');
+  });
+}
+function clearPoolValid(){
+  document.querySelectorAll('.pool-valid').forEach(el=>el.classList.remove('pool-valid'));
+}
+
+// ── DRAG ─────────────────────────────────────────────────
+function onPCardStart(e,id){
+  clearSelection();dId=id;dFrom='pool';dSlot=null;
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain',String(id));
+  setTimeout(()=>{document.getElementById('pc-'+id)?.classList.add('dragging');highlightValidSlots(getP(id));},0);
+}
+function onPCardEnd(e,id){
+  document.getElementById('pc-'+id)?.classList.remove('dragging');clearHighlights();clearPoolValid();clearDS();
+}
+function onSlotStart(e,t,i){
+  const p=(t==='A'?teamA:teamB)[i];if(!p){e.preventDefault();return;}
+  dId=p.id;dFrom=t;dSlot=i;
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain',String(p.id));
+  setTimeout(()=>highlightValidSlots(p),0);
+}
+function onSlotEnd(e){clearHighlights();clearDS();}
+function onSlotOver(e,t,i){
+  e.preventDefault();
+  const el=document.getElementById(`slot-${t}-${i}`);if(!el) return;
+  const player=getP(dId);const cat=SLOT_CATS[i];
+  const ok=!player||(player.role===cat.role&&player.tier===cat.tier);
+  if(ok){e.dataTransfer.dropEffect='move';el.classList.add('drag-over-ok');el.classList.remove('drag-over-bad');}
+  else{e.dataTransfer.dropEffect='none';el.classList.add('drag-over-bad');el.classList.remove('drag-over-ok');}
+}
+function onSlotLeave(e,t,i){
+  document.getElementById(`slot-${t}-${i}`)?.classList.remove('drag-over-ok','drag-over-bad');
+}
+function onSlotDrop(e,t,i){
+  e.preventDefault();
+  document.getElementById(`slot-${t}-${i}`)?.classList.remove('drag-over-ok','drag-over-bad');
+  if(dId===null) return;
+  const player=getP(dId);if(!player) return;
+  const cat=SLOT_CATS[i];
+  if(player.role!==cat.role||player.tier!==cat.tier){clearHighlights();clearDS();return;}
+  const destArr=t==='A'?teamA:teamB;
+  const displaced=destArr[i];
+  if(dFrom==='A') teamA[dSlot]=null;else if(dFrom==='B') teamB[dSlot]=null;
+  destArr[i]=player;
+  if(displaced){if(dFrom==='A') teamA[dSlot]=displaced;else if(dFrom==='B') teamB[dSlot]=displaced;}
+  clearHighlights();clearDS();render();
+}
+function onPoolOver(e){if(dFrom!=='pool'){e.preventDefault();e.dataTransfer.dropEffect='move';}}
+function onPoolDrop(e){
+  e.preventDefault();
+  if(dFrom==='A'&&dSlot!==null) teamA[dSlot]=null;
+  else if(dFrom==='B'&&dSlot!==null) teamB[dSlot]=null;
+  clearHighlights();clearDS();render();
+}
+function clearDS(){dId=null;dFrom=null;dSlot=null;}
+
+function removeSlot(t,i){if(t==='A') teamA[i]=null;else teamB[i]=null;render();}
+function resetAll(){teamA=new Array(6).fill(null);teamB=new Array(6).fill(null);clearSelection();render();}
+
+function shuffleTeams(){
+  // For each of the 6 slot categories, randomly swap teamA[i] and teamB[i]
+  // 2^6 = 64 possible outcomes
+  for(let i=0;i<6;i++){
+    if(teamA[i]&&teamB[i]&&Math.random()<0.5){
+      [teamA[i],teamB[i]]=[teamB[i],teamA[i]];
+    }
+  }
+  render();
+}
+
+function updateShuffleBtn(){
+  const filled=teamA.filter(Boolean).length+teamB.filter(Boolean).length;
+  const btn=document.getElementById('shuffleBtn');
+  if(!btn) return;
+  const ready=filled===12;
+  btn.disabled=!ready;
+  if(ready){btn.classList.add('active');btn.textContent='⇄ 무작위 섞기';}
+  else{btn.classList.remove('active');btn.textContent=`⇄ 무작위 섞기 (${filled}/12명)`;}
+}
+
+function updateBalance(){
+  const msg=document.getElementById('balanceMsg');
+  const filled=[...teamA,...teamB].filter(Boolean).length;
+  updateShuffleBtn();
+  if(filled<4){msg.classList.remove('on');return;}
+  const aH=teamA.filter(p=>p&&p.tier==='high').length;
+  const bH=teamB.filter(p=>p&&p.tier==='high').length;
+  const d=Math.abs(aH-bH);
+  if(d>=3){msg.textContent=`⚠ 밸런스 주의: ${aH>bH?'1팀':'2팀'}에 고티어가 ${d}명 더 많습니다`;msg.classList.add('on');}
+  else msg.classList.remove('on');
+}
+
+// ── MAP ──────────────────────────────────────────────────
+const MAP_GROUPS=[
+  {mode:'쟁탈',cls:'control',modeImg:'Control.webp',
+   maps:['네팔','리장 타워','부산','오아시스','일리오스']},
+  {mode:'호위', cls:'escort', modeImg:'Escort.webp',
+   maps:['66번 국도','감시 기지: 지브롤터','도라도','리알토','쓰레기촌']},
+  {mode:'혼합',cls:'hybrid', modeImg:'Hybrid.webp',
+   maps:['눔바니','블리자드 월드','아이헨발데','왕의 길','할리우드']},
+];
+const mapModeOf={};
+MAP_GROUPS.forEach(g=>g.maps.forEach(m=>mapModeOf[m]=g));
+let excludedMaps=new Set();
+let rolling=false;
+
+// render map groups WITHOUT touching winner area
+function renderMapGroups(){
+  const mg=document.getElementById('mapGroups');
+  mg.innerHTML=MAP_GROUPS.map(g=>`
+    <div class="map-group">
+      <div class="map-group-label ${g.cls}">
+        <img src="${BASE}${enc(g.modeImg)}" alt="" onerror="this.style.display='none'">
+        ${g.mode}
+      </div>
+      <div class="map-btns">
+        ${g.maps.map(m=>{
+          const mf=MAP_IMG[m];
+          const excl=excludedMaps.has(m);
+          return `<div class="map-btn ${excl?'excluded':''}" data-map="${m.replace(/"/g,'&quot;')}"
+            onclick="toggleMap(this)">
+            ${mf
+              ?`<img class="map-btn-img" src="${BASE}${enc(mf)}" alt="" onerror="this.style.display='none'">`
+              :`<div class="map-btn-img" style="background:var(--card2)"></div>`}
+            <div class="map-btn-name">${m}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+}
+
+// toggle via element reference — no string parsing issues
+function toggleMap(el){
+  const m=el.dataset.map;
+  excludedMaps.has(m)?excludedMaps.delete(m):excludedMaps.add(m);
+  el.classList.toggle('excluded');
+}
+
+// animate roller: slide each new name in from bottom
+function animateRollerName(nameEl, text){
+  nameEl.classList.remove('roll-anim');
+  void nameEl.offsetWidth; // force reflow to restart animation
+  nameEl.textContent=text;
+  nameEl.classList.add('roll-anim');
+}
+
+function setPickBtnsDisabled(disabled){
+  ['btnAll','btnCtrl','btnEsc','btnHyb'].forEach(id=>{
+    const btn=document.getElementById(id);
+    if(btn) btn.disabled=disabled;
+  });
+}
+
+function pickRandomMap(modeFilter){
+  if(rolling) return;
+  const pool=MAP_GROUPS
+    .filter(g=>!modeFilter||g.cls===modeFilter)
+    .flatMap(g=>g.maps)
+    .filter(m=>!excludedMaps.has(m));
+  if(!pool.length) return;
+
+  const pick=pool[Math.floor(Math.random()*pool.length)];
+  const g=mapModeOf[pick];
+
+  const card   =document.getElementById('winnerCard');
+  const imgEl  =document.getElementById('winnerImg');
+  const nameEl =document.getElementById('winnerName');
+  const modeEl =document.getElementById('winnerMode');
+
+  // show card (keep image/name from previous if any), hide mode during roll
+  card.classList.remove('hidden');
+  modeEl.className='map-winner-mode empty';
+  modeEl.innerHTML='&nbsp;';
+
+  rolling=true;
+  setPickBtnsDisabled(true);
+
+  const TICKS=14;
+  let ticks=0;
+  const iv=setInterval(()=>{
+    ticks++;
+    const r=pool[Math.floor(Math.random()*pool.length)];
+    animateRollerName(nameEl, ticks<TICKS ? r : pick);
+
+    // update image during roll too for visual effect
+    if(ticks<TICKS){
+      const rf=MAP_IMG[r];
+      if(rf) imgEl.src=BASE+enc(rf);
+    }
+
+    if(ticks>=TICKS){
+      clearInterval(iv);
+      rolling=false;
+      setPickBtnsDisabled(false);
+
+      // final state
+      const mf=MAP_IMG[pick];
+      if(mf) imgEl.src=BASE+enc(mf);
+      animateRollerName(nameEl, pick);
+      modeEl.innerHTML=`<img src="${BASE}${enc(g.modeImg)}" alt="" onerror="this.style.display='none'">${g.mode}`;
+      modeEl.className=`map-winner-mode ${g.cls}`;
+    }
+  }, 70);
+}
+
+renderMapGroups();
+render();
+</script>
+</body>
+</html>
